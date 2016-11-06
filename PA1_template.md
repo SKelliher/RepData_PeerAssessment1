@@ -118,7 +118,7 @@ include the number of steps taken in 5 minute intervals each day.
 
     qplot(steps, data = activitySum, bins = 20)
 
-![](PA1_template_files/figure-markdown_strict/plotsum-1.png)
+![](instructions_fig/plotsum-1.png)
 
     mean(activitySum$steps)
 
@@ -140,7 +140,7 @@ include the number of steps taken in 5 minute intervals each day.
     g <- g + ggtitle("Average steps per five minute interval")
     g
 
-![](PA1_template_files/figure-markdown_strict/lineplot-1.png)
+![](instructions_fig/lineplot-1.png)
 
 ### Show interval with the highest average step count
 
@@ -185,11 +185,11 @@ include the number of steps taken in 5 minute intervals each day.
 
     qplot(steps, data = activitySum, bins = 20, main = "Step count ignoring NAs", ylim = c(0,15))
 
-![](PA1_template_files/figure-markdown_strict/plotsumImp-1.png)
+![](instructions_fig/plotsumImp-1.png)
 
     qplot(steps, data = activitySumImp, bins = 20, main = "Step count with imputed interval mean values for NAs", ylim = c(0,15))
 
-![](PA1_template_files/figure-markdown_strict/plotsumImp-2.png)
+![](instructions_fig/plotsumImp-2.png)
 
     mean(activitySumImp$steps)
 
@@ -236,4 +236,4 @@ include the number of steps taken in 5 minute intervals each day.
     g <- g + ggtitle("Average steps per five minute interval")
     g
 
-![](PA1_template_files/figure-markdown_strict/panelset1-1.png)![](PA1_template_files/figure-markdown_strict/panelset1-2.png)
+![](instructions_fig/panelset1-1.png)![](instructions_fig/panelset1-2.png)
