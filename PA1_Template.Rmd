@@ -1,0 +1,193 @@
+---
+title: 'Peer-graded Assignment: Course Project 1'
+author: "St J Kelliher"
+date: "November 7, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Introduction
+
+It is now possible to collect a large amount of data about personal movement using activity monitoring devices such as a Fitbit, Nike Fuelband, or Jawbone Up. These type of devices are part of the "quantified self" movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. But these data remain under-utilized both because the raw data are hard to obtain and there is a lack of statistical methods and software for processing and interpreting the data.
+
+This assignment makes use of data from a personal activity monitoring device. This device collects data at 5 minute intervals through out the day. The data consists of two months of data from an anonymous individual collected during the months of October and November, 2012 and include the number of steps taken in 5 minute intervals each day.
+
+
+
+### Load dplyr and ggplot2 packages
+* if these packages have not been installed, they can be installed using the install.packages command.
+
+```{r loadlibraries, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(dplyr)
+```
+
+### Load data set
+
+* The data for this assignment can be downloaded from the course web site: https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip. 
+* Data will be stored in the activity dataframe, and dataframes derived from activity.
+
+```{r loaddata, echo=TRUE}
+
+## Clear variables in memory
+rm(list=ls())
+
+## Download data and store to activity dataframe
+myurl <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
+download.file(myurl, destfile='activity.zip')
+unzip("activity.zip")
+activity <- read.csv(file="activity.csv", header=TRUE, sep=",")
+
+```
+
+### Review data structure
+
+```{r datahead}
+head(activity)
+```
+
+```{r datatail}
+tail(activity)
+```
+
+```{r datasummary}
+summary(activity)
+```
+
+
+```{r datastr}
+str(activity)
+```
+
+### Convert Dates and Remove NA values
+* convert date column from factor to date data type
+* Remove rows with steps == NA and store to activityNA
+* Review summary
+
+```{r naomit}
+activity$date <- as.Date(activity$date)
+activityNA <- na.omit(activity)
+summary(activityNA)
+```
+
+
+### Sum steps by date, plot as histogram and calculate mean and median
+* Use dplyr to create a dataframe containing the sum of steps by date
+* use ggplot2 qplot function to plot histogram of the step count frequency across all dates
+* calculate mean and median daily steps
+
+```{r sumdate}
+activitySum <- activityNA %>% group_by(date) %>% summarize(steps = sum(steps))
+```
+
+```{r plotsum}
+qplot(steps, data = activitySum, bins = 20)
+```
+
+```{r mean}
+mean(activitySum$steps)
+median(activitySum$steps)
+```
+
+
+### Line plot of average steps per five minute interval
+* Interval 500 = 5:00AM etc 
+
+```{r lineplot}
+activityMean <- activityNA %>% group_by(interval) %>% summarize(steps = mean(steps))
+g <- ggplot(data = activityMean, aes(x = interval, y = steps))
+g <- g + geom_line(size=1)
+g <- g + ggtitle("Average steps per five minute interval")
+g
+
+```
+
+### Show interval with the highest average step count
+* Maximum average steps by interval are ~ 206 at 8:35 AM
+
+```{r maxinterval}
+filter(activityMean, steps == max(steps))
+```
+
+
+### Impute missing data
+* To adjust for missing step count data, we will assign the average number of steps for an interval in cases the number of steps for the interval is NA
+* We will create a combined dataframe, activityImp combining the activity dataframe, with the activityMean dataframe
+* Relabel the column names in activityImp for clarity
+* We will substitute the mean interval step count in activityImp for steps where steps in activityImp = NA
+
+```{r activityJoin}
+activityImp <- merge(activity, activityMean, by = "interval")
+colnames(activityImp) <- c("interval", "steps", "date", "mean")
+activityImp$steps[is.na(activityImp$steps)] <- activityImp$mean[is.na(activityImp$steps)]
+```
+
+### Sum steps by date, plot as histogram and calculate mean and median using the imputed data set
+* Derive dataframe with sum of daily steps
+* Plot histogram
+* calculate mean and median daily steps
+
+```{r sumImp}
+activitySumImp <- activityImp %>% group_by(date) %>% summarize(steps = sum(steps))
+```
+
+```{r plotsumImp}
+qplot(steps, data = activitySum, bins = 20, main = "Step count ignoring NAs", ylim = c(0,15))
+qplot(steps, data = activitySumImp, bins = 20, main = "Step count with imputed interval mean values for NAs", ylim = c(0,15))
+```
+
+```{r summean}
+mean(activitySumImp$steps)
+median(activitySumImp$steps)
+```
+
+* The mean values are the same, but the median value in the imputed data set is higher and now equal to the mean
+* As seen from the histograms, the number of days with average step count is notably higher after adding the imputed values.
+
+### Are there differences in activity patterns between weekdays and weekends?
+* Using the imputed dataframe, add factor variable with two levels "weekday" and "weekend"
+* create filtered data frames of interval steps counts grouping by weekday and weekend
+
+```{r weekdays}
+activityW <- mutate(activityImp, weekpart = ifelse(weekdays(activityImp$date) =="Saturday" | weekdays(activityImp$date)=="Sunday", "weekend", "weekday"))
+
+activityWE <- filter(activityW, weekpart == "weekend") %>% group_by(interval) %>% summarize(steps = mean(steps))
+
+activityWD <- filter(activityW, weekpart == "weekday") %>% group_by(interval) %>% summarize(steps = mean(steps))
+```
+
+* create panel time series plots for the average interval counts for weekdays and for weekends.
+
+```{r panelset, eval=FALSE, echo=TRUE}
+par(mfrow=c(2,1))
+
+g <- ggplot(data = activityMean, aes(x = interval, y = steps))
+g <- g + geom_line(size=1)
+g <- g + ggtitle("Average steps per five minute interval")
+g
+
+g <- ggplot(data = activityMean, aes(x = interval, y = steps))
+g <- g + geom_line(size=1)
+g <- g + ggtitle("Average steps per five minute interval")
+g
+
+```
+
+```{r panelset1, echo=FALSE}
+par(mfrow=c(2,1))
+
+g <- ggplot(data = activityWD, aes(x = interval, y = steps))
+g <- g + geom_line(size=1)
+g <- g + ggtitle("Average steps per five minute interval - Weekdays")
+g
+
+g <- ggplot(data = activityWE, aes(x = interval, y = steps))
+g <- g + geom_line(size=1)
+g <- g + ggtitle("Average steps per five minute interval - Weekends")
+g
+
+```
+
